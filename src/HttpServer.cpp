@@ -55,26 +55,21 @@ void HttpServer::handleHello(const Pistache::Rest::Request& request, Pistache::H
     response.send(Pistache::Http::Code::Ok, "Hello, World!\n");
 }
 
-void HttpServer::device_updated(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+void HttpServer::device_updated(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response)
+{
     DEBUG("HTTP server device_updated");
 
-    if (request.hasParam(":device_id") && request.hasParam(":nfc_list_update_time") &&
-        request.hasParam(":pin_list_update_time"))
-    {
-        // Extract URL parameters
-        auto device_id = request.param(":device_id").as<std::string>();
-        auto nfc_list_update_time = request.param(":nfc_list_update_time").as<uint32_t>();
-        auto pin_list_update_time = request.param(":pin_list_update_time").as<uint32_t>();
+    DEBUG("request.resource() = %s", request.resource().c_str());
 
-        // Process the parameters (you can replace this with your logic)
-        // For now, let's just print them
-        DEBUG("device_id = %s", device_id.c_str());
-        DEBUG("nfc_list_update_time = %d", nfc_list_update_time);
-        DEBUG("pin_list_update_time = %d", pin_list_update_time);
+    // Extract URL parameters
+    auto device_id = request.param(":device_id").as<std::string>();
+    auto nfc_list_update_time = request.param(":nfc_list_update_time").as<uint32_t>();
+    auto pin_list_update_time = request.param(":pin_list_update_time").as<uint32_t>();
 
-        // You can send a response back to the client
-        response.send(Pistache::Http::Code::Ok, "GET request handled\n");
-    } else {
-        response.send(Http::Code(418), "Bad request\n");
-    }
+
+    DEBUG("device_id = %s", device_id.c_str());
+    DEBUG("nfc_list_update_time = %d", nfc_list_update_time);
+    DEBUG("pin_list_update_time = %d", pin_list_update_time);
+
+    response.send(Pistache::Http::Code::Ok, "GET request handled\n");
 }
