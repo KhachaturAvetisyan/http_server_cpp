@@ -37,26 +37,30 @@ include(${PROJECT_BINARY_DIR}/conan_toolchain.cmake)
 
 
 # find 3rdParties libs
-find_package(nlohmann_json REQUIRED)
-find_package(CURL REQUIRED)
+#find_package(nlohmann_json REQUIRED)
+#find_package(CURL REQUIRED)
 find_package(Pistache REQUIRED)
 
 # include 3rdParties libs
-message(STATUS "nlohmann_json_INCLUDE_DIR: ${nlohmann_json_INCLUDE_DIR}")
-message(STATUS "CURL_INCLUDE_DIR: ${CURL_INCLUDE_DIR}")
+#message(STATUS "nlohmann_json_INCLUDE_DIR: ${nlohmann_json_INCLUDE_DIR}")
+#message(STATUS "CURL_INCLUDE_DIR: ${CURL_INCLUDE_DIR}")
 message(STATUS "Pistache_INCLUDE_DIR: ${Pistache_INCLUDE_DIR}")
 
-include_directories(${nlohmann_json_INCLUDE_DIR} ${CURL_INCLUDE_DIR} ${Pistache_INCLUDE_DIR})
+include_directories(
+#                    ${nlohmann_json_INCLUDE_DIR}
+#                    ${CURL_INCLUDE_DIR}
+                    ${Pistache_INCLUDE_DIR}
+                    )
 
 # link 3rdParties libs
-message(STATUS "nlohmann_json_LIBRARIES: ${nlohmann_json_LIBRARIES}")
-message(STATUS "CURL_LIBRARIES: ${CURL_LIBRARIES}")
+#message(STATUS "nlohmann_json_LIBRARIES: ${nlohmann_json_LIBRARIES}")
+#message(STATUS "CURL_LIBRARIES: ${CURL_LIBRARIES}")
 message(STATUS "Pistache_LIBRARIES: ${Pistache_LIBRARIES}")
 
 target_link_libraries(
         ${PROJECT_NAME} PUBLIC
 
-        CURL::libcurl
+#        CURL::libcurl
         Pistache::Pistache
-        nlohmann_json::nlohmann_json
+#        nlohmann_json::nlohmann_json
 )

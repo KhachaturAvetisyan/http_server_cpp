@@ -17,9 +17,6 @@ int main()
 
     DEBUG("Start main loop.");
 
-    while(true)
-    {
-    }
 
     httpServer.shutdown();
 

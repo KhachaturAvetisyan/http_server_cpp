@@ -26,7 +26,7 @@ void HttpServer::init(size_t thr)
 void HttpServer::start()
 {
     httpEndpoint->setHandler(router.handler());
-    httpEndpoint->serveThreaded();
+    httpEndpoint->serve();
 
     INFO("HTTP server started on port %d", port_to_listen);
 }
@@ -42,8 +42,7 @@ void HttpServer::setupRoutes()
 {
     using namespace Pistache::Rest;
     Routes::Get(router, "/hello", Routes::bind(&HttpServer::handleHello, this));
-    Routes::Get(router, "/api/device_updated/:device_id/:nfc_list_update_time/:pin_list_update_time",
-                Routes::bind(&HttpServer::device_updated, this));
+    Routes::Get(router, "/api/device_updated", Routes::bind(&HttpServer::device_updated, this));
 }
 
 
@@ -59,17 +58,51 @@ void HttpServer::device_updated(const Pistache::Rest::Request& request, Pistache
 {
     DEBUG("HTTP server device_updated");
 
-    DEBUG("request.resource() = %s", request.resource().c_str());
+    const auto& queryParams = request.query();
 
-    // Extract URL parameters
-    auto device_id = request.param(":device_id").as<std::string>();
-    auto nfc_list_update_time = request.param(":nfc_list_update_time").as<uint32_t>();
-    auto pin_list_update_time = request.param(":pin_list_update_time").as<uint32_t>();
+    if (queryParams.has("device_id") && queryParams.has("nfc_list_update_time") && queryParams.has("pin_list_update_time"))
+    {
+        std::string device_id = queryParams.get("device_id").get();
+        uint32_t nfc_list_update_time;
+        uint32_t pin_list_update_time;
+
+        try
+        {
+            nfc_list_update_time = std::stoul(queryParams.get("nfc_list_update_time").get());
+        }
+        catch (const std::invalid_argument& e)
+        {
+            ERROR( "Invalid argument: %s", e.what());
+        }
+        catch (const std::out_of_range& e)
+        {
+            ERROR( "Out of range: %s", e.what());
+        }
+
+        try
+        {
+            pin_list_update_time = std::stoul(queryParams.get("pin_list_update_time").get());
+        }
+        catch (const std::invalid_argument& e)
+        {
+            ERROR( "Invalid argument: %s", e.what());
+        }
+        catch (const std::out_of_range& e)
+        {
+            ERROR( "Out of range: %s", e.what());
+        }
 
 
-    DEBUG("device_id = %s", device_id.c_str());
-    DEBUG("nfc_list_update_time = %d", nfc_list_update_time);
-    DEBUG("pin_list_update_time = %d", pin_list_update_time);
+        DEBUG("device_id = %s", device_id.c_str());
+        DEBUG("nfc_list_update_time = %d", nfc_list_update_time);
+        DEBUG("pin_list_update_time = %d", pin_list_update_time);
+
+        response.send(Http::Code::Ok, "OK");
+    }
+    else
+    {
+        response.send(Http::Code::Bad_Request, "Missing one or more required parameters", MIME(Text, Plain));
+    }
 
     response.send(Pistache::Http::Code::Ok, "GET request handled\n");
 }

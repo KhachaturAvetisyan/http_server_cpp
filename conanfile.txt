@@ -1,9 +1,5 @@
 [requires]
 pistache/cci.20201127
-openssl/1.1.1v
-libcurl/8.2.1
-nlohmann_json/3.11.2
-
 
 [generators]
 CMakeDeps
