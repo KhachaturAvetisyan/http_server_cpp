@@ -1,62 +1,128 @@
 cmake_minimum_required(VERSION 3.20)
 project(http_server)
 
-set(CMAKE_CXX_STANDARD 17)
-set(PROJECT_NAME "http_server")
+# init options flags
+option(SERVER_TESTS "build tests (or no)" OFF)
+option(CONSOLE_LOGGER "enable console logger (or no)" OFF)
+option(SYSTEM_LOGGER "enable system logger (or no)" OFF)
+option(NON_BLOCKING "enable non-blocking sockets (or no)" OFF)
 
-# set build type
-set(CMAKE_BUILD_TYPE Release)
-
-# add options
-option(DEBUG "Debug mode" OFF)
-
-# set debug mode
-if(DEBUG)
-    add_definitions(-D DEBUG_VAR)
-    message(STATUS "Debug mode")
+# check Debug or Release build
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message("Debug build")
+    add_definitions(-D DEBUG_FLAG)
+    add_definitions(-D SPDLOG_ACTIVE_LEVEL=1)
 else()
-    message(STATUS "Release mode")
+    message("Release build")
 endif()
 
-# set include dir
-include_directories(${PROJECT_SOURCE_DIR}/headers)
+# check options flag
+message("CONSOLE_LOGGER: ${CONSOLE_LOGGER}")
+if (CONSOLE_LOGGER)
+    message("CONSOLE_LOGGER enabled!!")
+    add_definitions(-D CONSOLE_LOGGER)
+endif()
 
-# set all files
+message("SYSTEM_LOGGER: ${SYSTEM_LOGGER}")
+if (SYSTEM_LOGGER)
+    message("SYSTEM_LOGGER enabled!!")
+    add_definitions(-D SYSTEM_LOGGER)
+endif()
+
+# check NON_BLOCKING flag and add definition
+message("NON_BLOCKING: ${NON_BLOCKING}")
+if (NON_BLOCKING)
+    message("NON_BLOCKING enabled!!")
+    add_definitions(-D NON_BLOCKING)
+endif()
+
+# set compiler flags
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
+
+# set build options
+add_compile_options(
+        -pipe
+        -pie
+        -fpie
+        -fexceptions
+        -fno-strict-overflow
+        -fwrapv
+        -static-libgcc
+        -fstack-protector-strong
+        -fms-extensions
+        -Wformat
+        -Wformat-security
+        -Wno-missing-field-initializers
+        -Wno-unused-function
+        -Wno-unused-but-set-variable
+        -Wall
+        -Wextra
+        -Wpedantic
+)
+
+
+# set include directories
+include_directories(
+        "${PROJECT_SOURCE_DIR}/headers"
+        "${PROJECT_SOURCE_DIR}/headers/interfaces/"
+        "${PROJECT_SOURCE_DIR}/tpp"
+)
+
+# set source files
 file(GLOB all_SRCS
-        "${PROJECT_SOURCE_DIR}/headers/*.h"
+        "${PROJECT_SOURCE_DIR}/headers/*.hpp"
+        "${PROJECT_SOURCE_DIR}/headers/interfaces/*.hpp"
         "${PROJECT_SOURCE_DIR}/src/*.cpp"
-    )
+        "${PROJECT_SOURCE_DIR}/tpp/*.tpp"
+)
 
-# execut source files
-add_executable(${PROJECT_NAME} ${all_SRCS})
+# add executable files
+add_executable(${PROJECT_NAME} main.cpp)
 
+add_library(proj_src  ${all_SRCS})
+target_compile_features(proj_src PUBLIC cxx_std_23)
 
 # install conan libs
-execute_process(COMMAND conan install ${PROJECT_SOURCE_DIR}/conanfile.txt --output-folder=${PROJECT_BINARY_DIR} --build=missing)
-include(${PROJECT_BINARY_DIR}/conan_toolchain.cmake)
 
-
-# find 3rdParties libs
-find_package(nlohmann_json REQUIRED)
-find_package(CURL REQUIRED)
-find_package(Pistache REQUIRED)
 
 # include 3rdParties libs
-message(STATUS "nlohmann_json_INCLUDE_DIR: ${nlohmann_json_INCLUDE_DIR}")
-message(STATUS "CURL_INCLUDE_DIR: ${CURL_INCLUDE_DIR}")
-message(STATUS "Pistache_INCLUDE_DIR: ${Pistache_INCLUDE_DIR}")
+# find 3rdParties libs
+find_package(Pistache)
+find_package(spdlog)
+find_package(libconfig)
 
-include_directories(${nlohmann_json_INCLUDE_DIR} ${CURL_INCLUDE_DIR} ${Pistache_INCLUDE_DIR})
+# link 3rdParties libs include directories
+include_directories(
+        # 3rdParties libs include directories
+        ${spdlog_INCLUDE_DIRS}
+        ${fmt_INCLUDE_DIRS}
+        ${libconfig_INCLUDE_DIRS}
+        ${Pistache_INCLUDE_DIR}
+)
 
 # link 3rdParties libs
-message(STATUS "nlohmann_json_LIBRARIES: ${nlohmann_json_LIBRARIES}")
-message(STATUS "CURL_LIBRARIES: ${CURL_LIBRARIES}")
-message(STATUS "Pistache_LIBRARIES: ${Pistache_LIBRARIES}")
-
 target_link_libraries(
-        ${PROJECT_NAME} PUBLIC
+        ${PROJECT_NAME} PRIVATE
 
-        CURL::libcurl
+        proj_src
+
+        # 3rdParties libs link
         Pistache::Pistache
-        nlohmann_json::nlohmann_json
+        spdlog::spdlog
+        libconfig::libconfig
 )
+
+add_compile_definitions(SPDLOG_FMT_EXTERNAL)
+
+# enable tests and on/off
+message("SERVER_TESTS: ${SERVER_TESTS}")
+
+# ON or OFF UNIT TESTS
+if (SERVER_TESTS)
+    message("Unit tests enabled!!")
+    enable_testing()
+    add_subdirectory(tests)
+endif()
