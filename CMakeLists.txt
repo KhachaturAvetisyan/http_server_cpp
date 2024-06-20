@@ -85,8 +85,6 @@ add_executable(${PROJECT_NAME} main.cpp)
 add_library(proj_src  ${all_SRCS})
 target_compile_features(proj_src PUBLIC cxx_std_23)
 
-# install conan libs
-
 
 # include 3rdParties libs
 # find 3rdParties libs
